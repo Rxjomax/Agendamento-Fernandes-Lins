@@ -46,6 +46,7 @@ import {
   toDateISO,
 } from '../utils/timeSlots';
 import {
+  buildClientWhatsAppReminderUrl,
   buildEmailVoucherContent,
   buildGoogleCalendarUrl,
   buildWhatsAppVoucherUrl,
@@ -1640,14 +1641,33 @@ export const ClientAgendaView: React.FC<ClientAgendaViewProps> = ({
             {/* Rodapé de Ações do Modal */}
             <div className="p-4 sm:px-6 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
               <div className="flex flex-wrap items-center gap-2">
+                {(() => {
+                  const clientReminderUrl =
+                    buildClientWhatsAppReminderUrl(selectedAppointment);
+                  if (!clientReminderUrl) return null;
+                  return (
+                    <a
+                      href={clientReminderUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[#16A34A] hover:bg-[#15803D] text-white transition-colors"
+                      title={`Abrir WhatsApp do cliente (${selectedAppointment.clientPhone}) com lembrete pronto`}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>Enviar Lembrete ao Cliente</span>
+                    </a>
+                  );
+                })()}
+
                 <a
                   href={buildWhatsAppVoucherUrl(selectedAppointment)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[#0B2545] text-[#FACC15] hover:bg-[#134074] transition-colors"
+                  title="Enviar comprovante no WhatsApp do escritório"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
+                  <span>WhatsApp Escritório</span>
                 </a>
 
                 <a

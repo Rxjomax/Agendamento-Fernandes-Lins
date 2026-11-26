@@ -9,7 +9,7 @@ export const FIRM_WHATSAPP_DISPLAY = '+55 81 8669-3251';
 export const DEFAULT_NOTIFICATION_EMAIL = 'marciel.fernandes@hotmail.com';
 
 export function formatPhoneForWhatsApp(rawPhone: string): string {
-  const digits = rawPhone.replace(/\D/g, '');
+  const digits = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
   if (!digits) return '';
   if (digits.startsWith('55') && digits.length >= 12) {
     return digits;
@@ -281,4 +281,31 @@ export function buildWhatsAppReviewRequestUrl(
 
   const encodedText = encodeURIComponent(message);
   return `https://wa.me/${FIRM_WHATSAPP_NUMBER}?text=${encodedText}`;
+}
+
+export function buildClientWhatsAppReminderUrl(
+  appointment: Appointment
+): string | null {
+  if (appointment.entryType === 'commitment') return null;
+  const clientDigits = formatPhoneForWhatsApp(appointment.clientPhone || '');
+  if (clientDigits.length < 12) return null;
+
+  const message = [
+    `Olá, *${appointment.clientName}*! Tudo bem?`,
+    ``,
+    `Passando para lembrar do seu atendimento na *Fernandes & Lins Assessoria Jurídica*:`,
+    ``,
+    `• *Protocolo:* ${appointment.code}`,
+    `• *Atendimento:* ${appointment.serviceName}`,
+    `• *Data:* ${formatDateShortBR(appointment.date)} (${formatDateLongBR(appointment.date)})`,
+    `• *Horário:* ${appointment.startTime} às ${appointment.endTime} (${appointment.durationMinutes} min)`,
+    `• *Endereço:* ${FIRM_ADDRESS}`,
+    ``,
+    `Caso precise reagendar ou tirar alguma dúvida, pode responder por aqui.`,
+    ``,
+    `Atenciosamente,`,
+    `Secretaria · Fernandes & Lins Assessoria Jurídica`,
+  ].join('\n');
+
+  return `https://wa.me/${clientDigits}?text=${encodeURIComponent(message)}`;
 }

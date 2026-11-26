@@ -45,6 +45,7 @@ import {
   UserRole,
 } from '../types/scheduling';
 import {
+  buildClientWhatsAppReminderUrl,
   buildEmailVoucherContent,
   buildWhatsAppVoucherUrl,
 } from '../utils/notificationLinks';
@@ -1353,12 +1354,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       </button>
                                     )}
 
+                                    {(() => {
+                                      const clientReminderUrl =
+                                        buildClientWhatsAppReminderUrl(appt);
+                                      if (!clientReminderUrl) return null;
+                                      return (
+                                        <a
+                                          href={clientReminderUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1 min-h-[40px] px-2.5 py-1.5 text-xs font-semibold text-[#15803D] bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors"
+                                          title={`Enviar lembrete no WhatsApp do cliente (${appt.clientPhone})`}
+                                        >
+                                          <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+                                          <span className="hidden xl:inline">Lembrar Cliente</span>
+                                        </a>
+                                      );
+                                    })()}
+
                                     <a
                                       href={buildWhatsAppVoucherUrl(appt)}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="min-w-[40px] min-h-[40px] inline-flex items-center justify-center p-2 text-[#1D4ED8] hover:bg-blue-50 rounded-lg transition-colors"
-                                      title="Enviar comprovante no WhatsApp"
+                                      title="Enviar comprovante no WhatsApp do escritório"
                                     >
                                       <MessageCircle className="w-4 h-4" />
                                     </a>
@@ -2196,7 +2215,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               )}
 
-            <div className="pt-2 flex items-center justify-end gap-2">
+            <div className="pt-2 flex flex-wrap items-center justify-end gap-2">
+              {(() => {
+                const clientReminderUrl =
+                  buildClientWhatsAppReminderUrl(inspectingAppointment);
+                if (!clientReminderUrl) return null;
+                return (
+                  <a
+                    href={clientReminderUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 text-xs font-semibold text-[#15803D] bg-green-50 hover:bg-green-100 border border-green-200 rounded-xl transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4 shrink-0" />
+                    <span>Enviar Lembrete ao Cliente</span>
+                  </a>
+                );
+              })()}
               <button
                 type="button"
                 onClick={() => {

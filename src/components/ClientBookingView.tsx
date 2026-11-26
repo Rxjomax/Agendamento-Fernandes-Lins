@@ -13,6 +13,7 @@ import {
   FolderOpen,
   LogIn,
   MapPin,
+  MessageCircle,
   Moon,
   Paperclip,
   ShieldCheck,
@@ -24,6 +25,7 @@ import {
   X,
 } from 'lucide-react';
 import { uploadPdfDocumentFile } from '../utils/pdfUpload';
+import { buildClientWhatsAppReminderUrl } from '../utils/notificationLinks';
 import {
   Appointment,
   AppointmentDocument,
@@ -1776,7 +1778,23 @@ export const ClientBookingView: React.FC<ClientBookingViewProps> = ({
                 </div>
               )}
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-2 flex flex-wrap items-center justify-end gap-2">
+              {(() => {
+                const clientReminderUrl =
+                  buildClientWhatsAppReminderUrl(inspectedAppointment);
+                if (!clientReminderUrl) return null;
+                return (
+                  <a
+                    href={clientReminderUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 rounded-xl bg-green-50 hover:bg-green-100 border border-green-200 text-[#15803D] text-xs font-semibold transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4 shrink-0" />
+                    <span>Enviar Lembrete ao Cliente</span>
+                  </a>
+                );
+              })()}
               <button
                 type="button"
                 onClick={() => setInspectedAppointment(null)}
