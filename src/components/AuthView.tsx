@@ -3,21 +3,17 @@ import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
-  Briefcase,
-  Calendar,
   Camera,
   Check,
   CheckCircle2,
   Eye,
   EyeOff,
-  KeyRound,
   Lock,
   LogOut,
   Mail,
   ShieldCheck,
   Trash2,
   Upload,
-  User as UserIcon,
 } from 'lucide-react';
 import { BrandMark } from './BrandMark';
 import {
@@ -31,7 +27,7 @@ import { signInWithGoogle } from '../firebase';
 import { processAndUploadImageFile } from '../utils/imageUpload';
 import { FIRM_INFO } from '../data/seedData';
 
-export type AuthMode = 'login' | 'register' | 'forgot-password' | 'profile';
+export type AuthMode = 'login' | 'forgot-password' | 'profile';
 
 interface AuthViewProps {
   registeredUsers: RegisteredUser[];
@@ -98,19 +94,6 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginSuccessMsg, setLoginSuccessMsg] = useState<string | null>(null);
 
-  // --- Estados de Cadastro ---
-  const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPhone, setRegPhone] = useState('');
-  const [regRole, setRegRole] = useState<UserRole>('staff');
-  const [regOab, setRegOab] = useState('');
-  const [regAvatarUrl, setRegAvatarUrl] = useState('');
-  const [isUploadingRegPhoto, setIsUploadingRegPhoto] = useState(false);
-  const [regPassword, setRegPassword] = useState('');
-  const [regConfirmPassword, setRegConfirmPassword] = useState('');
-  const [showRegPassword, setShowRegPassword] = useState(false);
-  const [regError, setRegError] = useState<string | null>(null);
-
   // --- Estados de Recuperação de Senha ---
   const [resetIdentifier, setResetIdentifier] = useState('');
   const [resetPhoneVerify, setResetPhoneVerify] = useState('');
@@ -143,28 +126,6 @@ export const AuthView: React.FC<AuthViewProps> = ({
       setProfConfirmPassword('');
     }
   }, [currentUser]);
-
-  const handleRegPhotoFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setRegError(null);
-    setIsUploadingRegPhoto(true);
-    try {
-      const uploadedUrl = await processAndUploadImageFile(file, {
-        maxWidth: 320,
-        maxHeight: 320,
-        prefix: 'avatar',
-      });
-      setRegAvatarUrl(uploadedUrl);
-    } catch (err) {
-      setRegError(err instanceof Error ? err.message : 'Erro ao processar foto.');
-    } finally {
-      setIsUploadingRegPhoto(false);
-      e.target.value = '';
-    }
-  };
 
   const handleProfPhotoFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>
@@ -227,7 +188,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
     const matchedUser = findUserByIdentifier(loginIdentifier);
     if (!matchedUser) {
       setLoginError(
-        'Nenhuma conta encontrada com este e-mail ou telefone. Use os acessos rápidos acima ou crie uma conta.'
+        'Nenhuma conta encontrada com este e-mail ou telefone. Verifique os dados informados.'
       );
       return;
     }
@@ -251,25 +212,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
     });
   };
 
-  const handleQuickLogin = (user: RegisteredUser) => {
-    setLoginError(null);
-    setLoginIdentifier(user.email);
-    setLoginPassword(user.password);
-    onLoginSuccess({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      oab: user.oab,
-      avatarUrl: user.avatarUrl,
-      firmName: FIRM_INFO.name,
-    });
-  };
-
   const handleGoogleLogin = async () => {
     setLoginError(null);
-    setRegError(null);
     try {
       const fbUser = await signInWithGoogle();
       const email = (fbUser.email || '').trim().toLowerCase();
@@ -309,53 +253,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
       });
     } catch {
       setLoginError(
-        'Não foi possível concluir o login com Google agora. Use uma das contas Master/Funcionário abaixo.'
+        'Não foi possível concluir o login com Google agora. Entre com seu e-mail e senha abaixo.'
       );
-    }
-  };
-
-  const handleRegisterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setRegError(null);
-
-    if (regName.trim().length < 3) {
-      setRegError('Informe o nome completo (mínimo 3 caracteres).');
-      return;
-    }
-
-    const cleanEmail = regEmail.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      setRegError('Informe um endereço de e-mail válido.');
-      return;
-    }
-
-    if (regPhone.replace(/\D/g, '').length < 10) {
-      setRegError('Informe um WhatsApp/telefone válido com DDD.');
-      return;
-    }
-
-    if (regPassword.length < 4) {
-      setRegError('A senha deve ter pelo menos 4 caracteres.');
-      return;
-    }
-
-    if (regPassword !== regConfirmPassword) {
-      setRegError('As senhas digitadas não conferem.');
-      return;
-    }
-
-    const result = onRegisterUser({
-      name: regName.trim(),
-      email: cleanEmail,
-      phone: formatPhoneBR(regPhone),
-      password: regPassword,
-      role: regRole,
-      oab: regOab.trim() || undefined,
-      avatarUrl: regAvatarUrl.trim() || undefined,
-    });
-
-    if (!result.success && result.error) {
-      setRegError(result.error);
     }
   };
 
@@ -450,13 +349,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setTimeout(() => setProfSaved(false), 4000);
   };
 
-  const masterAccount = registeredUsers.find((u) => u.role === 'master');
-  const staffAccounts = registeredUsers
-    .filter((u) => u.role === 'staff')
-    .slice(0, 2);
-
   return (
-    <div className="max-w-[1140px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    <div className="max-w-[620px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
@@ -475,69 +369,53 @@ export const AuthView: React.FC<AuthViewProps> = ({
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
-        {/* Coluna Esquerda: Formulário Principal */}
-        <div className="lg:col-span-7 p-6 sm:p-10">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-            <div className="flex items-center gap-2.5">
-              <BrandMark size="md" variant="navy" />
-              <div>
-                <span className="font-editorial font-bold text-lg text-[#0B2545] block leading-none">
-                  {FIRM_INFO.shortName}
-                </span>
-                <span className="text-[11px] text-slate-500">
-                  Acesso Master &amp; Secretaria
-                </span>
-              </div>
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-10">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <BrandMark size="md" variant="navy" />
+            <div>
+              <span className="font-editorial font-bold text-lg text-[#0B2545] block leading-none">
+                {FIRM_INFO.shortName}
+              </span>
+              <span className="text-[11px] text-slate-500 mt-1 block">
+                Acesso Master &amp; Secretaria
+              </span>
             </div>
+          </div>
 
+          {currentUser && (
             <div className="inline-flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-              {currentUser && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('profile');
-                    setProfError(null);
-                  }}
-                  className={`min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                    mode === 'profile'
-                      ? 'bg-[#0B2545] text-white'
-                      : 'text-slate-600 hover:text-[#0B2545]'
-                  }`}
-                >
-                  Minha Conta
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('profile');
+                  setProfError(null);
+                }}
+                className={`min-h-[40px] px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  mode === 'profile'
+                    ? 'bg-[#0B2545] text-white'
+                    : 'text-slate-600 hover:text-[#0B2545]'
+                }`}
+              >
+                Minha Conta
+              </button>
               <button
                 type="button"
                 onClick={() => {
                   setMode('login');
                   setLoginError(null);
                 }}
-                className={`min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                className={`min-h-[40px] px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                   mode === 'login' || mode === 'forgot-password'
                     ? 'bg-[#0B2545] text-white'
                     : 'text-slate-600 hover:text-[#0B2545]'
                 }`}
               >
-                {currentUser ? 'Trocar Conta' : 'Entrar'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('register');
-                  setRegError(null);
-                }}
-                className={`min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                  mode === 'register'
-                    ? 'bg-[#0B2545] text-white'
-                    : 'text-slate-600 hover:text-[#0B2545]'
-                }`}
-              >
-                Cadastrar Conta
+                Trocar Conta
               </button>
             </div>
-          </div>
+          )}
+        </div>
 
           {/* MODO 1: PERFIL LOGADO */}
           {mode === 'profile' && currentUser && (
@@ -782,83 +660,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 Acesso ao Escritório
               </h1>
               <p className="text-xs sm:text-sm text-slate-600 mt-1 mb-6">
-                Selecione uma das 2 contas do escritório (<strong>Master</strong> ou{' '}
-                <strong>Funcionário / Secretaria</strong>) ou informe suas credenciais.
+                Informe seu e-mail ou telefone cadastrado e senha para acessar a conta{' '}
+                <strong>Master</strong> ou <strong>Funcionário / Secretaria</strong>.
               </p>
-
-              {/* Contas Rápidas: Master e Funcionário + Google */}
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-6 space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-[#0B2545] flex items-center gap-1.5">
-                    <KeyRound className="w-3.5 h-3.5 text-[#1D4ED8]" />
-                    Contas do Sistema (Acesso Direto)
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {masterAccount && (
-                    <button
-                      type="button"
-                      onClick={() => handleQuickLogin(masterAccount)}
-                      className="text-left p-3.5 rounded-xl bg-[#0B2545] hover:bg-[#134074] text-white transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FACC15]">
-                          <ShieldCheck className="w-4 h-4" />
-                          Conta Master
-                        </span>
-                        <span className="text-[11px] font-semibold text-slate-200">
-                          Entrar →
-                        </span>
-                      </div>
-                      <p className="text-xs font-bold text-white truncate">
-                        {masterAccount.name}
-                      </p>
-                      <p className="font-mono-tabular text-[11px] text-slate-300 truncate mt-0.5">
-                        {masterAccount.email}
-                      </p>
-                    </button>
-                  )}
-
-                  {staffAccounts.map((staff) => (
-                    <button
-                      key={staff.id}
-                      type="button"
-                      onClick={() => handleQuickLogin(staff)}
-                      className="text-left p-3.5 rounded-xl bg-white hover:bg-[#EFF6FF] border-2 border-[#134074]/30 hover:border-[#134074] transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B2545]">
-                          <Briefcase className="w-4 h-4 text-[#1D4ED8]" />
-                          Conta Funcionário
-                        </span>
-                        <span className="text-[11px] font-semibold text-[#1D4ED8]">
-                          Entrar →
-                        </span>
-                      </div>
-                      <p className="text-xs font-bold text-[#0F172A] truncate">
-                        {staff.name}
-                      </p>
-                      <p className="font-mono-tabular text-[11px] text-slate-600 truncate mt-0.5">
-                        {staff.email}
-                      </p>
-                    </button>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={handleGoogleLogin}
-                    className="sm:col-span-2 text-left p-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer flex items-center justify-between"
-                  >
-                    <span className="text-xs font-bold text-[#0B2545]">
-                      Entrar com Conta Google (Firebase Auth)
-                    </span>
-                    <span className="text-xs font-semibold text-[#1D4ED8]">
-                      Conectar →
-                    </span>
-                  </button>
-                </div>
-              </div>
 
               {loginSuccessMsg && (
                 <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-[#0B2545] flex items-center gap-2 font-medium">
@@ -892,8 +696,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
                         setLoginIdentifier(e.target.value);
                         if (loginError) setLoginError(null);
                       }}
-                      placeholder="master@fernandeslins.adv.br ou secretaria@fernandeslins.adv.br"
-                      className="w-full min-h-[46px] pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:border-[#134074] focus:outline-none"
+                      placeholder="seu.email@fernandeslins.adv.br ou telefone"
+                      className="w-full min-h-[46px] pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:border-[#134074] focus:outline-none"
                     />
                   </div>
                 </div>
@@ -913,7 +717,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                         setResetError(null);
                         setMode('forgot-password');
                       }}
-                      className="text-xs font-semibold text-[#1D4ED8] hover:underline cursor-pointer"
+                      className="min-h-[36px] px-1 text-xs font-semibold text-[#1D4ED8] hover:underline cursor-pointer"
                     >
                       Esqueci minha senha
                     </button>
@@ -929,12 +733,13 @@ export const AuthView: React.FC<AuthViewProps> = ({
                         if (loginError) setLoginError(null);
                       }}
                       placeholder="Digite sua senha"
-                      className="w-full min-h-[46px] pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 text-sm focus:border-[#134074] focus:outline-none"
+                      className="w-full min-h-[46px] pl-10 pr-12 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm focus:border-[#134074] focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setShowLoginPassword((p) => !p)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                      aria-label={showLoginPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center absolute right-1 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
                     >
                       {showLoginPassword ? (
                         <EyeOff className="w-4 h-4" />
@@ -953,6 +758,30 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
+
+              <div className="relative my-5">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-white px-3 text-slate-400 font-medium">
+                    ou
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 transition-colors cursor-pointer flex items-center justify-between"
+              >
+                <span className="text-xs font-bold text-[#0B2545]">
+                  Entrar com Conta Google (Firebase Auth)
+                </span>
+                <span className="text-xs font-semibold text-[#1D4ED8]">
+                  Conectar →
+                </span>
+              </button>
             </div>
           )}
 
@@ -962,7 +791,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
               <h1 className="font-editorial text-2xl font-bold text-[#0B2545]">
                 Redefinir Senha
               </h1>
-              <p className="text-xs text-slate-600 mt-1 mb-5">
+              <p className="text-xs sm:text-sm text-slate-600 mt-1 mb-5">
                 Informe o e-mail da conta e os 4 últimos dígitos do telefone cadastrado.
               </p>
 
@@ -979,14 +808,14 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   value={resetIdentifier}
                   onChange={(e) => setResetIdentifier(e.target.value)}
                   placeholder="E-mail ou telefone da conta"
-                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm"
+                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm"
                 />
                 <input
                   type="text"
                   value={resetPhoneVerify}
                   onChange={(e) => setResetPhoneVerify(e.target.value)}
                   placeholder="4 últimos dígitos do WhatsApp/telefone"
-                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono-tabular"
+                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-mono-tabular"
                 />
                 <div className="relative">
                   <input
@@ -994,12 +823,13 @@ export const AuthView: React.FC<AuthViewProps> = ({
                     value={resetNewPassword}
                     onChange={(e) => setResetNewPassword(e.target.value)}
                     placeholder="Nova senha"
-                    className="w-full min-h-[46px] pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 text-sm"
+                    className="w-full min-h-[46px] pl-3.5 pr-12 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowResetPassword((p) => !p)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 cursor-pointer"
+                    aria-label={showResetPassword ? 'Ocultar nova senha' : 'Mostrar nova senha'}
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center absolute right-1 top-1/2 -translate-y-1/2 text-slate-400 cursor-pointer"
                   >
                     {showResetPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -1013,213 +843,27 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   value={resetConfirmPassword}
                   onChange={(e) => setResetConfirmPassword(e.target.value)}
                   placeholder="Confirmar nova senha"
-                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm"
+                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm"
                 />
                 <button
                   type="submit"
-                  className="w-full min-h-[48px] py-3 rounded-xl bg-[#0B2545] text-white font-bold text-sm cursor-pointer"
+                  className="w-full min-h-[48px] py-3 rounded-xl bg-[#0B2545] hover:bg-[#134074] text-white font-bold text-sm transition-colors cursor-pointer"
                 >
                   Confirmar Nova Senha
                 </button>
-              </form>
-            </div>
-          )}
-
-          {/* MODO 4: CADASTRAR NOVA CONTA (COM FOTO) */}
-          {mode === 'register' && (
-            <div>
-              <h1 className="font-editorial text-2xl font-bold text-[#0B2545]">
-                Cadastrar Conta da Equipe
-              </h1>
-              <p className="text-xs text-slate-600 mt-1 mb-5">
-                Crie um perfil Master ou Funcionário (Secretaria) com foto.
-              </p>
-
-              {regError && (
-                <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{regError}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleRegisterSubmit} className="space-y-4" noValidate>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    {regAvatarUrl ? (
-                      <img
-                        src={regAvatarUrl}
-                        alt="Preview"
-                        className="w-12 h-12 rounded-xl object-cover border border-[#0B2545]"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-xl bg-white border border-dashed border-slate-300 text-[#134074] flex items-center justify-center">
-                        <Camera className="w-5 h-5" />
-                      </div>
-                    )}
-                    <div className="text-xs">
-                      <p className="font-bold text-[#0B2545]">Foto do Cadastro</p>
-                      <p className="text-slate-500">
-                        {isUploadingRegPhoto ? 'Enviando...' : 'Opcional (JPG/PNG)'}
-                      </p>
-                    </div>
-                  </div>
-                  <label className="min-h-[40px] inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0B2545] text-white text-xs font-semibold cursor-pointer">
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>{regAvatarUrl ? 'Trocar' : 'Adicionar Foto'}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleRegPhotoFileChange}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setRegRole('staff')}
-                    className={`min-h-[44px] px-3 py-2 rounded-xl border text-xs font-bold cursor-pointer ${
-                      regRole === 'staff'
-                        ? 'bg-[#0B2545] text-white border-[#0B2545]'
-                        : 'bg-white text-slate-700 border-slate-300'
-                    }`}
-                  >
-                    Funcionário / Secretaria
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRegRole('master')}
-                    className={`min-h-[44px] px-3 py-2 rounded-xl border text-xs font-bold cursor-pointer ${
-                      regRole === 'master'
-                        ? 'bg-[#0B2545] text-[#FACC15] border-[#0B2545]'
-                        : 'bg-white text-slate-700 border-slate-300'
-                    }`}
-                  >
-                    Master / Advogado
-                  </button>
-                </div>
-
-                <input
-                  type="text"
-                  value={regName}
-                  onChange={(e) => setRegName(e.target.value)}
-                  placeholder="Nome completo *"
-                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm"
-                />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    type="email"
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                    placeholder="E-mail *"
-                    className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm"
-                  />
-                  <input
-                    type="tel"
-                    value={regPhone}
-                    onChange={(e) => setRegPhone(formatPhoneBR(e.target.value))}
-                    placeholder="WhatsApp (81) 99999-9999 *"
-                    className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono-tabular"
-                  />
-                </div>
-
-                {regRole === 'master' && (
-                  <input
-                    type="text"
-                    value={regOab}
-                    onChange={(e) => setRegOab(e.target.value)}
-                    placeholder="Registro OAB (opcional, ex: OAB/PE 41.820)"
-                    className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm"
-                  />
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="relative">
-                    <input
-                      type={showRegPassword ? 'text' : 'password'}
-                      value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
-                      placeholder="Senha (mín. 4) *"
-                      className="w-full min-h-[46px] pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowRegPassword((p) => !p)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 cursor-pointer"
-                    >
-                      {showRegPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                  <input
-                    type={showRegPassword ? 'text' : 'password'}
-                    value={regConfirmPassword}
-                    onChange={(e) => setRegConfirmPassword(e.target.value)}
-                    placeholder="Confirmar senha *"
-                    className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm"
-                  />
-                </div>
-
                 <button
-                  type="submit"
-                  className="w-full min-h-[48px] py-3 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] text-[#0B2545] font-bold text-sm cursor-pointer"
+                  type="button"
+                  onClick={() => {
+                    setResetError(null);
+                    setMode('login');
+                  }}
+                  className="w-full min-h-[44px] py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold text-xs transition-colors cursor-pointer"
                 >
-                  Criar Conta e Acessar
+                  Voltar para Entrar
                 </button>
               </form>
             </div>
           )}
-        </div>
-
-        {/* Coluna Direita: Resumo das Permissões Master vs Funcionário */}
-        <div className="lg:col-span-5 fl-navy-banner text-white p-6 sm:p-10 flex flex-col justify-between gap-8">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-[#FACC15] mb-3">
-              Estrutura de Acesso · {FIRM_INFO.shortName}
-            </p>
-            <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-white leading-tight">
-              Duas contas dedicadas para recepção ágil e governança do escritório.
-            </h2>
-
-            <div className="mt-6 space-y-4 text-xs sm:text-sm">
-              <div className="p-4 rounded-xl bg-white/10 border border-white/15">
-                <p className="font-bold text-[#FACC15] flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4" />
-                  1. Conta Master (Sócios / Gestores)
-                </p>
-                <p className="text-slate-200 mt-1.5 leading-relaxed">
-                  Administra áreas jurídicas, advogados, horários de expediente, bloqueios de recesso, contas de funcionários e relatórios financeiros.
-                </p>
-                <p className="font-mono-tabular text-[11px] text-slate-300 mt-2">
-                  master@fernandeslins.adv.br · senha: master123
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl bg-white/10 border border-white/15">
-                <p className="font-bold text-white flex items-center gap-2">
-                  <UserIcon className="w-4 h-4 text-[#FACC15]" />
-                  2. Conta Funcionário (Secretaria / Recepção)
-                </p>
-                <p className="text-slate-200 mt-1.5 leading-relaxed">
-                  Consulta a agenda livre dos advogados, cadastra clientes presenciais com CPF e endereço, registra o caso completo com PDFs ou assunto breve e acompanha comparecimentos.
-                </p>
-                <p className="font-mono-tabular text-[11px] text-slate-300 mt-2">
-                  secretaria@fernandeslins.adv.br · senha: func123
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-4 border-t border-white/15 text-xs text-slate-300">
-            <p className="font-semibold text-white">{FIRM_INFO.name}</p>
-            <p className="mt-0.5">{FIRM_INFO.address}</p>
-          </div>
-        </div>
       </div>
     </div>
   );
