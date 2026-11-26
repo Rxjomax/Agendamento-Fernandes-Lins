@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarCheck,
+  CalendarPlus,
   Check,
   Copy,
   Download,
@@ -20,6 +21,7 @@ import {
   DEFAULT_NOTIFICATION_EMAIL,
   FIRM_WHATSAPP_DISPLAY,
   buildEmailVoucherContent,
+  buildGoogleCalendarUrl,
   buildWhatsAppVoucherUrl,
   downloadAppointmentICS,
 } from '../utils/notificationLinks';
@@ -33,6 +35,7 @@ export interface EmailDispatchState {
 
 interface ThankYouViewProps {
   appointment: Appointment | null;
+  targetEmail?: string;
   emailDispatchState?: EmailDispatchState;
   onRetryAutoEmail?: (appointment: Appointment) => void;
   onNewBooking: () => void;
@@ -42,6 +45,7 @@ interface ThankYouViewProps {
 
 export const ThankYouView: React.FC<ThankYouViewProps> = ({
   appointment,
+  targetEmail,
   emailDispatchState,
   onRetryAutoEmail,
   onNewBooking,
@@ -74,8 +78,9 @@ export const ThankYouView: React.FC<ThankYouViewProps> = ({
 
   const isCommitment = appointment.entryType === 'commitment';
   const targetNotificationEmail =
-    emailDispatchState?.to || DEFAULT_NOTIFICATION_EMAIL;
+    emailDispatchState?.to || targetEmail || DEFAULT_NOTIFICATION_EMAIL;
   const whatsappUrl = buildWhatsAppVoucherUrl(appointment);
+  const googleCalendarUrl = buildGoogleCalendarUrl(appointment);
   const emailUrl = buildEmailVoucherContent(
     appointment,
     targetNotificationEmail
@@ -371,14 +376,24 @@ export const ThankYouView: React.FC<ThankYouViewProps> = ({
           </a>
         </div>
 
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <a
+            href={googleCalendarUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="min-h-[46px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-white border border-slate-300 text-[#0B2545] hover:border-[#1D4ED8] hover:bg-blue-50 transition-colors"
+          >
+            <CalendarPlus className="w-4 h-4 text-[#1D4ED8] shrink-0" />
+            <span>Google Agenda</span>
+          </a>
+
           <button
             type="button"
             onClick={() => downloadAppointmentICS(appointment)}
             className="min-h-[46px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-slate-100 text-[#0B2545] hover:bg-slate-200 transition-colors cursor-pointer"
           >
-            <Download className="w-4 h-4" />
-            <span>Exportar Agenda (.ics)</span>
+            <Download className="w-4 h-4 shrink-0" />
+            <span>Baixar (.ics)</span>
           </button>
 
           <button

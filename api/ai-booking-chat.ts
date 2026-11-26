@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import {
   runAiBookingChat,
   type AiBookingChatRequestBody,
-} from '../server/aiBookingChat';
+} from '../server/aiBookingChat.js';
 
 interface VercelRequest extends IncomingMessage {
   body?: unknown;

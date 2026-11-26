@@ -91,6 +91,7 @@ const STORAGE_KEYS = {
   SESSION: 'fl_adv_v1_session',
   CLEARED_AT: 'fl_adv_v1_cleared_at',
   PURGED_LEGACY: 'fl_adv_v1_purged',
+  SESSION_BOOKED_IDS: 'fl_adv_v1_session_booked_ids',
 };
 
 function saveAppointmentsToLocalStorage(list: Appointment[]) {
@@ -251,6 +252,20 @@ export function App() {
 
   const [lastBookedAppointment, setLastBookedAppointment] =
     useState<Appointment | null>(null);
+  const [sessionBookedIds, setSessionBookedIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SESSION_BOOKED_IDS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((id): id is string => typeof id === 'string');
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  });
   const [configuredNotificationEmail, setConfiguredNotificationEmail] = useState(
     DEFAULT_NOTIFICATION_EMAIL
   );
@@ -802,7 +817,14 @@ export function App() {
         });
       }
 
-      const data = await resp.json().catch(() => ({}));
+      const rawText = await resp.text().catch(() => '');
+      let data: Record<string, any> = {};
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
+
       if (resp.ok && data.sent) {
         setEmailDispatchState({
           status: 'sent',
@@ -819,10 +841,13 @@ export function App() {
           message: data.message,
         });
       } else {
+        const fallbackErr = !resp.ok
+          ? `Falha no servidor ao enviar e-mail (HTTP ${resp.status}).`
+          : 'Não foi possível concluir o envio automático.';
         setEmailDispatchState({
           status: 'error',
           to: data?.to || configuredNotificationEmail,
-          message: data?.error || 'Não foi possível concluir o envio automático.',
+          message: data?.error || fallbackErr,
         });
       }
     } catch {
@@ -832,6 +857,19 @@ export function App() {
         message: 'Falha de conexão ao tentar enviar o e-mail automático.',
       });
     }
+  };
+
+  const rememberSessionBookedId = (id: string) => {
+    setSessionBookedIds((prev) => {
+      if (prev.includes(id)) return prev;
+      const next = [id, ...prev].slice(0, 50);
+      try {
+        localStorage.setItem(STORAGE_KEYS.SESSION_BOOKED_IDS, JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
   };
 
   // Handlers de Agendamento
@@ -852,6 +890,7 @@ export function App() {
       saveAppointmentsToLocalStorage(next);
       return next;
     });
+    rememberSessionBookedId(newAppointment.id);
     persistAppointmentToBackend(newAppointment);
     setLastBookedAppointment(newAppointment);
     void syncAppointmentToFirestore(newAppointment).catch(() => {});
@@ -896,6 +935,7 @@ export function App() {
       saveAppointmentsToLocalStorage(next);
       return next;
     });
+    rememberSessionBookedId(newAppointment.id);
     persistAppointmentToBackend(newAppointment);
     setLastBookedAppointment(newAppointment);
     void syncAppointmentToFirestore(newAppointment).catch(() => {});
@@ -1318,6 +1358,8 @@ export function App() {
                 appointments={appointments}
                 availability={availability}
                 currentUser={currentUser}
+                myBookedIds={sessionBookedIds}
+                focusedAppointment={lastBookedAppointment}
                 onCancelAppointment={(id) =>
                   handleUpdateAppointmentStatus(id, 'cancelled')
                 }
@@ -1379,6 +1421,7 @@ export function App() {
             {currentView === 'thank-you' && (
               <ThankYouView
                 appointment={lastBookedAppointment}
+                targetEmail={configuredNotificationEmail}
                 emailDispatchState={emailDispatchState}
                 onRetryAutoEmail={triggerAutomaticEmail}
                 onNewBooking={() => navigateTo('booking')}

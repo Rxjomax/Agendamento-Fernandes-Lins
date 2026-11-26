@@ -12,7 +12,7 @@ export const FIRM_INFO = {
   tagline: 'Assessoria Jurídica Cível, Trabalhista, Previdenciário e Criminal',
   address: 'R. Boanerges Pereira, 08 - Sl 06 - Jordão, Recife - PE, 51260-000',
   phone: '(81) 8669-3251',
-  email: 'jm783311@gmail.com',
+  email: 'marciel.fernandes@hotmail.com',
 };
 
 export const INITIAL_USERS: RegisteredUser[] = [

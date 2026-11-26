@@ -6,7 +6,7 @@ export const FIRM_ADDRESS =
 
 export const FIRM_WHATSAPP_NUMBER = '558186693251';
 export const FIRM_WHATSAPP_DISPLAY = '+55 81 8669-3251';
-export const DEFAULT_NOTIFICATION_EMAIL = 'jm783311@gmail.com';
+export const DEFAULT_NOTIFICATION_EMAIL = 'marciel.fernandes@hotmail.com';
 
 export function formatPhoneForWhatsApp(rawPhone: string): string {
   const digits = rawPhone.replace(/\D/g, '');
@@ -178,6 +178,46 @@ export function buildEmailVoucherContent(
   )}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
   return { to, subject, body, mailtoUrl };
+}
+
+export function buildGoogleCalendarUrl(appointment: Appointment): string {
+  const dateClean = appointment.date.replace(/-/g, '');
+  const startClean = appointment.startTime.replace(':', '') + '00';
+  const endClean = appointment.endTime.replace(':', '') + '00';
+  const isCommitment = appointment.entryType === 'commitment';
+  const title = isCommitment
+    ? `${appointment.commitmentCategory ? `[${appointment.commitmentCategory}] ` : ''}${appointment.clientName}`
+    : `${appointment.serviceName} — ${appointment.clientName} (${appointment.code})`;
+  const location = (isCommitment && appointment.location) || FIRM_ADDRESS;
+  const details = isCommitment
+    ? [
+        `Fernandes & Lins Assessoria Jurídica`,
+        `Código: ${appointment.code}`,
+        `Categoria: ${appointment.commitmentCategory || 'Compromisso'}`,
+        appointment.briefSubject || appointment.caseDescription || '',
+      ]
+        .filter(Boolean)
+        .join('\n')
+    : [
+        `Fernandes & Lins Assessoria Jurídica`,
+        `Protocolo: ${appointment.code}`,
+        `Cliente: ${appointment.clientName}`,
+        `CPF: ${appointment.clientCpf}`,
+        `Telefone: ${appointment.clientPhone}`,
+        appointment.briefSubject || appointment.caseDescription || '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${dateClean}T${startClean}/${dateClean}T${endClean}`,
+    details,
+    location,
+    ctz: 'America/Recife',
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
 export function downloadAppointmentICS(appointment: Appointment): void {

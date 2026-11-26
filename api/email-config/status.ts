@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getEmailConfigStatus } from '../../server/resendEmail';
+import { getEmailConfigStatus } from '../../server/resendEmail.js';
 
 interface VercelResponse extends ServerResponse {
   status: (code: number) => VercelResponse;

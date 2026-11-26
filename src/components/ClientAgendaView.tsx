@@ -47,6 +47,7 @@ import {
 } from '../utils/timeSlots';
 import {
   buildEmailVoucherContent,
+  buildGoogleCalendarUrl,
   buildWhatsAppVoucherUrl,
   downloadAppointmentICS,
 } from '../utils/notificationLinks';
@@ -76,6 +77,8 @@ interface ClientAgendaViewProps {
   appointments: Appointment[];
   availability: AvailabilityConfig;
   currentUser: UserSession | null;
+  myBookedIds?: string[];
+  focusedAppointment?: Appointment | null;
   onCancelAppointment: (id: string) => void;
   onUpdateStatus?: (id: string, status: AppointmentStatus) => void;
   onCreateCommitment?: (
@@ -248,6 +251,8 @@ export const ClientAgendaView: React.FC<ClientAgendaViewProps> = ({
   appointments,
   availability,
   currentUser,
+  myBookedIds,
+  focusedAppointment,
   onCancelAppointment,
   onUpdateStatus,
   onCreateCommitment,
@@ -259,9 +264,29 @@ export const ClientAgendaView: React.FC<ClientAgendaViewProps> = ({
   const todayISO = toDateISO(now);
 
   const [displayMode, setDisplayMode] = useState<CalendarDisplayMode>('month');
-  const [cursorDate, setCursorDate] = useState<Date>(() => new Date(now.getFullYear(), now.getMonth(), 1));
-  const [selectedDayISO, setSelectedDayISO] = useState<string>(todayISO);
+  const [cursorDate, setCursorDate] = useState<Date>(() => {
+    if (focusedAppointment?.date) {
+      const target = parseDateISO(focusedAppointment.date);
+      return new Date(target.getFullYear(), target.getMonth(), 1);
+    }
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [selectedDayISO, setSelectedDayISO] = useState<string>(
+    () => focusedAppointment?.date || todayISO
+  );
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!focusedAppointment?.date) return;
+    const target = parseDateISO(focusedAppointment.date);
+    setSelectedDayISO(focusedAppointment.date);
+    setCursorDate(new Date(target.getFullYear(), target.getMonth(), 1));
+  }, [focusedAppointment?.id, focusedAppointment?.date]);
+
+  const myBookedIdsSet = useMemo(
+    () => new Set(myBookedIds || []),
+    [myBookedIds]
+  );
 
   const [lookupInput, setLookupInput] = useState('');
   const [statusFilter, setStatusFilter] = useState<
@@ -356,7 +381,8 @@ export const ClientAgendaView: React.FC<ClientAgendaViewProps> = ({
     return appointments
       .filter((appt) => {
         const isCommitment = appt.entryType === 'commitment';
-        if (!isStaffOrMaster && !query && !isCommitment) {
+        const isMyBooked = myBookedIdsSet.has(appt.id);
+        if (!isStaffOrMaster && !query && !isCommitment && !isMyBooked) {
           return false;
         }
 
@@ -409,14 +435,16 @@ export const ClientAgendaView: React.FC<ClientAgendaViewProps> = ({
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         return a.startTime.localeCompare(b.startTime);
       });
-  }, [appointments, isStaffOrMaster, lookupInput, statusFilter]);
+  }, [appointments, isStaffOrMaster, lookupInput, myBookedIdsSet, statusFilter]);
 
   const stats = useMemo(() => {
     const nowRef = new Date();
     const base =
       isStaffOrMaster || lookupInput.trim()
         ? appointments
-        : appointments.filter((a) => a.entryType === 'commitment');
+        : appointments.filter(
+            (a) => a.entryType === 'commitment' || myBookedIdsSet.has(a.id)
+          );
     const active = base.filter((a) => isAppointmentUpcoming(a, nowRef));
     const completed = base.filter((a) => isAppointmentCompletedOrPast(a, nowRef));
     const cancelled = base.filter((a) => a.status === 'cancelled');
@@ -432,7 +460,7 @@ export const ClientAgendaView: React.FC<ClientAgendaViewProps> = ({
       cancelledCount: cancelled.length,
       nextAppointment: sortedActive[0] || null,
     };
-  }, [appointments, isStaffOrMaster, lookupInput]);
+  }, [appointments, isStaffOrMaster, lookupInput, myBookedIdsSet]);
 
   // Agrupa agendamentos por data YYYY-MM-DD para renderização ultrarrápida no calendário
   const appointmentsByDate = useMemo(() => {
@@ -1628,6 +1656,16 @@ export const ClientAgendaView: React.FC<ClientAgendaViewProps> = ({
                 >
                   <Mail className="w-3.5 h-3.5 text-[#1D4ED8]" />
                   <span>E-mail</span>
+                </a>
+
+                <a
+                  href={buildGoogleCalendarUrl(selectedAppointment)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-white text-[#0B2545] border border-slate-300 hover:bg-blue-50 transition-colors"
+                >
+                  <CalendarPlus className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                  <span>Google Agenda</span>
                 </a>
 
                 <button

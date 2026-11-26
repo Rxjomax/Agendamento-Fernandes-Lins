@@ -49,7 +49,7 @@ function escapeHtml(val: unknown): string {
 export function getEmailConfigStatus(): EmailConfigStatus {
   const resendApiKey = (process.env.RESEND_API_KEY || '').trim();
   const targetEmail = (
-    process.env.NOTIFICATION_EMAIL || 'jm783311@gmail.com'
+    process.env.NOTIFICATION_EMAIL || 'marciel.fernandes@hotmail.com'
   ).trim();
   const rawFrom = (
     process.env.RESEND_FROM ||
@@ -270,37 +270,52 @@ export async function sendAppointmentEmail(
       ? appointment.clientEmail.trim()
       : undefined;
 
-  const resend = new Resend(resendApiKey);
-  const { data: resendData, error: resendError } = await resend.emails.send({
-    from: fromEmail,
-    to: [targetEmail],
-    ...(clientReplyTo ? { replyTo: clientReplyTo } : {}),
-    subject,
-    text: textBody,
-    html: htmlBody,
-    ...(attachments.length > 0 ? { attachments } : {}),
-  });
+  try {
+    const resend = new Resend(resendApiKey);
+    const { data: resendData, error: resendError } = await resend.emails.send({
+      from: fromEmail,
+      to: [targetEmail],
+      ...(clientReplyTo ? { replyTo: clientReplyTo } : {}),
+      subject,
+      text: textBody,
+      html: htmlBody,
+      ...(attachments.length > 0 ? { attachments } : {}),
+    });
 
-  if (resendError) {
+    if (resendError) {
+      return {
+        statusCode: 502,
+        body: {
+          sent: false,
+          provider: 'resend',
+          to: targetEmail,
+          error: `Resend recusou o envio: ${resendError.message}`,
+        },
+      };
+    }
+
+    return {
+      statusCode: 200,
+      body: {
+        sent: true,
+        provider: 'resend',
+        to: targetEmail,
+        messageId: resendData?.id,
+        attachmentsCount: attachments.length,
+      },
+    };
+  } catch (err) {
     return {
       statusCode: 502,
       body: {
         sent: false,
         provider: 'resend',
         to: targetEmail,
-        error: `Resend recusou o envio: ${resendError.message}`,
+        error:
+          err instanceof Error
+            ? `Erro ao enviar via Resend: ${err.message}`
+            : 'Erro inesperado ao enviar via Resend.',
       },
     };
   }
-
-  return {
-    statusCode: 200,
-    body: {
-      sent: true,
-      provider: 'resend',
-      to: targetEmail,
-      messageId: resendData?.id,
-      attachmentsCount: attachments.length,
-    },
-  };
 }
