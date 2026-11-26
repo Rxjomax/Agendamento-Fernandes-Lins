@@ -529,8 +529,8 @@ export const ClientBookingView: React.FC<ClientBookingViewProps> = ({
           <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5 max-w-[74ch]">
             <BrandMark size="xl" variant="gold" className="mt-0.5" />
             <div>
-              <p className="text-xs font-semibold tracking-wide uppercase text-[#FACC15] mb-1.5">
-                {FIRM_INFO.name} · {FIRM_INFO.tagline}
+              <p className="text-xs font-semibold tracking-wide text-[#FACC15] mb-1.5">
+                <span className="uppercase">{FIRM_INFO.name}</span> · {FIRM_INFO.tagline}
               </p>
               <h1 className="font-editorial text-3xl sm:text-4xl font-bold text-white leading-[1.1] text-balance">
                 Agenda Compartilhada &amp; Recepção

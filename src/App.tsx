@@ -145,6 +145,22 @@ function normalizeUserRole(rawRole: unknown): UserRole {
   return 'staff';
 }
 
+function normalizeLegacyMasterFields<
+  T extends { id?: string; email?: string; name?: string; oab?: string }
+>(user: T): T {
+  const isLegacyMaster =
+    user.name === 'Dr. Henrique Fernandes' ||
+    (user.id === 'usr-master-1' &&
+      (!user.name || user.name === 'Dr. Henrique Fernandes'));
+  const hasPlaceholderOab = user.oab === 'OAB/PE 41.820';
+  if (!isLegacyMaster && !hasPlaceholderOab) return user;
+  return {
+    ...user,
+    ...(isLegacyMaster ? { name: 'Marciel Fernandes' } : {}),
+    ...(hasPlaceholderOab ? { oab: undefined } : {}),
+  };
+}
+
 export function App() {
   purgeLegacyStorageOnce();
 
@@ -208,11 +224,13 @@ export function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const normalized = parsed.map((u: RegisteredUser & { isDefaultAdmin?: boolean }) => ({
-            ...u,
-            role: normalizeUserRole(u.role),
-            isDefaultMaster: u.isDefaultMaster ?? u.isDefaultAdmin,
-          }));
+          const normalized = parsed.map((u: RegisteredUser & { isDefaultAdmin?: boolean }) =>
+            normalizeLegacyMasterFields({
+              ...u,
+              role: normalizeUserRole(u.role),
+              isDefaultMaster: u.isDefaultMaster ?? u.isDefaultAdmin,
+            })
+          );
           const hasMaster = normalized.some(
             (u: RegisteredUser) =>
               u.email.toLowerCase() === 'master@fernandeslins.adv.br'
@@ -233,11 +251,11 @@ export function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.email) {
-          return {
+          return normalizeLegacyMasterFields({
             ...parsed,
             role: normalizeUserRole(parsed.role),
             firmName: FIRM_INFO.name,
-          };
+          });
         }
       }
     } catch {
@@ -335,11 +353,13 @@ export function App() {
           setAppointments(normalizePastAppointments(serverAppointments));
           if (Array.isArray(data.registeredUsers) && data.registeredUsers.length > 0) {
             setRegisteredUsers(
-              data.registeredUsers.map((u: RegisteredUser & { isDefaultAdmin?: boolean }) => ({
-                ...u,
-                role: normalizeUserRole(u.role),
-                isDefaultMaster: u.isDefaultMaster ?? u.isDefaultAdmin,
-              }))
+              data.registeredUsers.map((u: RegisteredUser & { isDefaultAdmin?: boolean }) =>
+                normalizeLegacyMasterFields({
+                  ...u,
+                  role: normalizeUserRole(u.role),
+                  isDefaultMaster: u.isDefaultMaster ?? u.isDefaultAdmin,
+                })
+              )
             );
           }
           return;
@@ -379,11 +399,13 @@ export function App() {
 
         if (Array.isArray(data.registeredUsers) && data.registeredUsers.length > 0) {
           setRegisteredUsers(
-            data.registeredUsers.map((u: RegisteredUser & { isDefaultAdmin?: boolean }) => ({
-              ...u,
-              role: normalizeUserRole(u.role),
-              isDefaultMaster: u.isDefaultMaster ?? u.isDefaultAdmin,
-            }))
+            data.registeredUsers.map((u: RegisteredUser & { isDefaultAdmin?: boolean }) =>
+              normalizeLegacyMasterFields({
+                ...u,
+                role: normalizeUserRole(u.role),
+                isDefaultMaster: u.isDefaultMaster ?? u.isDefaultAdmin,
+              })
+            )
           );
         }
       })

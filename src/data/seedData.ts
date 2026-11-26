@@ -9,7 +9,7 @@ import {
 export const FIRM_INFO = {
   name: 'Fernandes & Lins Assessoria Jurídica',
   shortName: 'Fernandes & Lins',
-  tagline: 'Assessoria Jurídica Cível, Trabalhista, Previdenciário e Criminal',
+  tagline: 'Advocacia Cível, Trabalhista, Previdenciária e Criminal.',
   address: 'R. Boanerges Pereira, 08 - Sl 06 - Jordão, Recife - PE, 51260-000',
   phone: '(81) 8669-3251',
   email: 'marciel.fernandes@hotmail.com',
@@ -18,12 +18,11 @@ export const FIRM_INFO = {
 export const INITIAL_USERS: RegisteredUser[] = [
   {
     id: 'usr-master-1',
-    name: 'Dr. Henrique Fernandes',
+    name: 'Marciel Fernandes',
     email: 'master@fernandeslins.adv.br',
     phone: '(81) 99810-4001',
     password: 'master123',
     role: 'master',
-    oab: 'OAB/PE 41.820',
     createdAt: new Date().toISOString(),
     isDefaultMaster: true,
   },

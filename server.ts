@@ -61,12 +61,11 @@ function getCleanInitialDbState(): PersistedDatabaseState {
     registeredUsers: [
       {
         id: 'usr-master-1',
-        name: 'Dr. Henrique Fernandes',
+        name: 'Marciel Fernandes',
         email: 'master@fernandeslins.adv.br',
         phone: '(81) 99810-4001',
         password: 'master123',
         role: 'master',
-        oab: 'OAB/PE 41.820',
         createdAt: new Date().toISOString(),
         isDefaultMaster: true,
       },
