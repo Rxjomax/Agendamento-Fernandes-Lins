@@ -1,0 +1,332 @@
+{
+  "entities": {
+    "LegalServiceItem": {
+      "title": "LegalServiceItem",
+      "description": "A legal consultation area or service offered by Fernandes & Lins Advocacia.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Unique identifier for the legal area/service."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120,
+          "description": "Display name of the consultation area."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500,
+          "description": "Scope of legal assistance."
+        },
+        "durationMinutes": {
+          "type": "number",
+          "description": "Duration of the consultation in minutes."
+        },
+        "price": {
+          "type": "number",
+          "description": "Consultation fee in BRL."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive"],
+          "description": "Whether the area is active for scheduling."
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Practice area (e.g., Trabalhista, Cível, Previdenciário)."
+        },
+        "specialist": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Assigned attorney name."
+        },
+        "imageUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500,
+          "description": "Optional photo URL."
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the Master account that created the item."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "durationMinutes",
+        "price",
+        "status",
+        "category",
+        "specialist",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AppointmentRecord": {
+      "title": "AppointmentRecord",
+      "description": "A law firm consultation scheduled by reception staff or master.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Unique appointment ID."
+        },
+        "code": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32,
+          "description": "Protocol code (e.g., FL-4821)."
+        },
+        "serviceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Referenced legal service ID."
+        },
+        "serviceName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Legal practice area or consultation name."
+        },
+        "lawyerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Assigned attorney name."
+        },
+        "durationMinutes": {
+          "type": "number",
+          "description": "Duration in minutes."
+        },
+        "price": {
+          "type": "number",
+          "description": "Consultation fee in BRL."
+        },
+        "date": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Appointment date in YYYY-MM-DD."
+        },
+        "startTime": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 5,
+          "pattern": "^\\d{2}:\\d{2}$",
+          "description": "Start time in HH:mm."
+        },
+        "endTime": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 5,
+          "pattern": "^\\d{2}:\\d{2}$",
+          "description": "End time in HH:mm."
+        },
+        "clientName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120,
+          "description": "Client full name."
+        },
+        "clientPhone": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 30,
+          "description": "Client phone / WhatsApp."
+        },
+        "clientCpf": {
+          "type": "string",
+          "minLength": 11,
+          "maxLength": 20,
+          "description": "Client CPF."
+        },
+        "clientAddress": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 240,
+          "description": "Client residential or commercial address."
+        },
+        "clientEmail": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 150,
+          "description": "Optional client email."
+        },
+        "descriptionMode": {
+          "type": "string",
+          "enum": ["complete", "brief"],
+          "description": "Whether the secretary recorded a complete case + PDFs or a brief subject."
+        },
+        "caseDescription": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 4000,
+          "description": "Detailed case narrative."
+        },
+        "briefSubject": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 300,
+          "description": "Short subject/summary of the consultation."
+        },
+        "documentsCount": {
+          "type": "number",
+          "description": "Count of attached PDF documents."
+        },
+        "entryType": {
+          "type": "string",
+          "enum": ["client", "commitment"],
+          "description": "Distinguishes client consultations from internal/personal agenda commitments without a client."
+        },
+        "commitmentCategory": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 80,
+          "description": "Optional category label for standalone agenda commitments."
+        },
+        "location": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 240,
+          "description": "Optional physical or virtual location for agenda commitments."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["confirmed", "pending", "cancelled", "completed"],
+          "description": "Appointment status."
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the staff/master user who created the appointment."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "id",
+        "code",
+        "serviceId",
+        "serviceName",
+        "durationMinutes",
+        "price",
+        "date",
+        "startTime",
+        "endTime",
+        "clientName",
+        "clientPhone",
+        "clientCpf",
+        "clientAddress",
+        "descriptionMode",
+        "status",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserPrivateProfile": {
+      "title": "UserPrivateProfile",
+      "description": "Isolated PII profile document restricted to owner or master.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120,
+          "description": "Full name."
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 150,
+          "description": "Email address."
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 30,
+          "description": "Phone number."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500,
+          "description": "Optional profile photo URL."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Update timestamp."
+        }
+      },
+      "required": ["uid", "name", "email", "phone", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/services/{serviceId}": {
+      "schema": { "$ref": "#/entities/LegalServiceItem" },
+      "description": "Catalog of legal consultation areas and attorneys managed by Master."
+    },
+    "/appointments/{appointmentId}": {
+      "schema": { "$ref": "#/entities/AppointmentRecord" },
+      "description": "Law firm consultation appointments registered by reception staff and Master."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateProfile" },
+      "description": "Isolated PII profile data for an office member."
+    }
+  }
+}

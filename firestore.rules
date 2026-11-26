@@ -1,0 +1,234 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default-Deny Catch-All)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Helpers
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isBootstrappedOwner() {
+      return isSignedIn() && request.auth.token.email == 'jm783311@gmail.com';
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        isBootstrappedOwner() ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Validation Blueprint: LegalServiceItem
+    function isValidServiceItem(data) {
+      return data.keys().hasAll([
+        'id', 'name', 'description', 'durationMinutes', 'price',
+        'status', 'category', 'specialist', 'ownerId', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'name', 'description', 'durationMinutes', 'price',
+        'status', 'category', 'specialist', 'imageUrl', 'ownerId', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.id) &&
+      data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+      data.description is string && data.description.size() >= 0 && data.description.size() <= 500 &&
+      data.durationMinutes is number && data.durationMinutes >= 5 && data.durationMinutes <= 480 &&
+      data.price is number && data.price >= 0 && data.price <= 50000 &&
+      data.status is string && (data.status == 'active' || data.status == 'inactive') &&
+      data.category is string && data.category.size() >= 1 && data.category.size() <= 80 &&
+      data.specialist is string && data.specialist.size() >= 1 && data.specialist.size() <= 120 &&
+      (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() >= 0 && data.imageUrl.size() <= 500)) &&
+      isValidId(data.ownerId) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // Validation Blueprint: AppointmentRecord
+    function isValidAppointmentRecord(data) {
+      return data.keys().hasAll([
+        'id', 'code', 'serviceId', 'serviceName', 'durationMinutes', 'price',
+        'date', 'startTime', 'endTime', 'clientName', 'clientPhone',
+        'clientCpf', 'clientAddress', 'descriptionMode',
+        'status', 'ownerId', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'code', 'serviceId', 'serviceName', 'lawyerName', 'durationMinutes', 'price',
+        'date', 'startTime', 'endTime', 'clientName', 'clientPhone',
+        'clientCpf', 'clientAddress', 'clientEmail', 'descriptionMode',
+        'caseDescription', 'briefSubject', 'documentsCount',
+        'entryType', 'commitmentCategory', 'location',
+        'status', 'ownerId', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.id) &&
+      data.code is string && data.code.size() >= 3 && data.code.size() <= 32 &&
+      isValidId(data.serviceId) &&
+      data.serviceName is string && data.serviceName.size() >= 1 && data.serviceName.size() <= 120 &&
+      (!('lawyerName' in data) || (data.lawyerName is string && data.lawyerName.size() >= 1 && data.lawyerName.size() <= 120)) &&
+      data.durationMinutes is number && data.durationMinutes >= 5 && data.durationMinutes <= 480 &&
+      data.price is number && data.price >= 0 && data.price <= 50000 &&
+      data.date is string && data.date.size() == 10 && data.date.matches('^\\d{4}-\\d{2}-\\d{2}$') &&
+      data.startTime is string && data.startTime.size() == 5 && data.startTime.matches('^\\d{2}:\\d{2}$') &&
+      data.endTime is string && data.endTime.size() == 5 && data.endTime.matches('^\\d{2}:\\d{2}$') &&
+      data.clientName is string && data.clientName.size() >= 2 && data.clientName.size() <= 120 &&
+      data.clientPhone is string && data.clientPhone.size() >= 8 && data.clientPhone.size() <= 30 &&
+      data.clientCpf is string && data.clientCpf.size() >= 11 && data.clientCpf.size() <= 20 &&
+      data.clientAddress is string && data.clientAddress.size() >= 3 && data.clientAddress.size() <= 240 &&
+      (!('clientEmail' in data) || (data.clientEmail is string && data.clientEmail.size() >= 0 && data.clientEmail.size() <= 150)) &&
+      data.descriptionMode is string && (data.descriptionMode == 'complete' || data.descriptionMode == 'brief') &&
+      (!('caseDescription' in data) || (data.caseDescription is string && data.caseDescription.size() >= 0 && data.caseDescription.size() <= 4000)) &&
+      (!('briefSubject' in data) || (data.briefSubject is string && data.briefSubject.size() >= 0 && data.briefSubject.size() <= 300)) &&
+      (!('documentsCount' in data) || (data.documentsCount is number && data.documentsCount >= 0 && data.documentsCount <= 20)) &&
+      (!('entryType' in data) || (data.entryType is string && (data.entryType == 'client' || data.entryType == 'commitment'))) &&
+      (!('commitmentCategory' in data) || (data.commitmentCategory is string && data.commitmentCategory.size() >= 0 && data.commitmentCategory.size() <= 80)) &&
+      (!('location' in data) || (data.location is string && data.location.size() >= 0 && data.location.size() <= 240)) &&
+      data.status is string && (
+        data.status == 'confirmed' ||
+        data.status == 'pending' ||
+        data.status == 'cancelled' ||
+        data.status == 'completed'
+      ) &&
+      isValidId(data.ownerId) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // Validation Blueprint: UserPrivateProfile
+    function isValidUserPrivateProfile(data) {
+      return data.keys().hasAll(['uid', 'name', 'email', 'phone', 'createdAt', 'updatedAt']) &&
+      data.keys().hasOnly(['uid', 'name', 'email', 'phone', 'avatarUrl', 'createdAt', 'updatedAt']) &&
+      isValidId(data.uid) &&
+      data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+      data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+      data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 30 &&
+      (!('avatarUrl' in data) || (data.avatarUrl is string && data.avatarUrl.size() >= 0 && data.avatarUrl.size() <= 500)) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // Admins Registry (Read-only for self, managed only via console)
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId) && request.auth.uid == adminId;
+      allow list, create, update, delete: if false;
+    }
+
+    // Legal Services / Areas Collection
+    match /services/{serviceId} {
+      allow get: if isSignedIn() && isValidId(serviceId) && (
+        existing().status == 'active' || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        existing().status == 'active' || existing().ownerId == request.auth.uid || isBootstrappedOwner()
+      );
+      allow create: if isSignedIn() &&
+        isValidId(serviceId) &&
+        isValidServiceItem(incoming()) &&
+        incoming().id == serviceId &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isAdmin();
+      allow update: if isSignedIn() &&
+        isValidId(serviceId) &&
+        isValidServiceItem(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'description', 'durationMinutes', 'price', 'status', 'category', 'specialist', 'imageUrl', 'updatedAt'
+        ]) &&
+        isAdmin();
+      allow delete: if isSignedIn() && isValidId(serviceId) && isAdmin();
+    }
+
+    // Appointments Collection
+    match /appointments/{appointmentId} {
+      allow get: if isSignedIn() && isValidId(appointmentId) && (
+        existing().ownerId == request.auth.uid || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        existing().ownerId == request.auth.uid || isBootstrappedOwner()
+      );
+      allow create: if isSignedIn() &&
+        isValidId(appointmentId) &&
+        isValidAppointmentRecord(incoming()) &&
+        incoming().id == appointmentId &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/services/$(incoming().serviceId));
+      allow update: if isSignedIn() &&
+        isValidId(appointmentId) &&
+        isValidAppointmentRecord(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().code == existing().code &&
+        incoming().serviceId == existing().serviceId &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          (
+            existing().ownerId == request.auth.uid &&
+            existing().status != 'cancelled' &&
+            existing().status != 'completed' &&
+            incoming().status == 'cancelled' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          ) ||
+          (
+            isAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'date', 'startTime', 'endTime', 'status', 'lawyerName', 'clientName', 'clientPhone', 'clientCpf', 'clientAddress', 'clientEmail', 'descriptionMode', 'caseDescription', 'briefSubject', 'documentsCount', 'entryType', 'commitmentCategory', 'location', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isSignedIn() && isValidId(appointmentId) && isAdmin();
+    }
+
+    // Isolated PII User Profile
+    match /users/{userId}/private/{docId} {
+      allow get: if isSignedIn() && isValidId(userId) && isValidId(docId) && (
+        request.auth.uid == userId || isAdmin()
+      );
+      allow list: if false;
+      allow create: if isSignedIn() &&
+        isValidId(userId) &&
+        isValidId(docId) &&
+        request.auth.uid == userId &&
+        isValidUserPrivateProfile(incoming()) &&
+        incoming().uid == userId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isSignedIn() &&
+        isValidId(userId) &&
+        isValidId(docId) &&
+        isValidUserPrivateProfile(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          (
+            request.auth.uid == userId &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['name', 'email', 'phone', 'avatarUrl', 'updatedAt'])
+          ) ||
+          isAdmin()
+        );
+      allow delete: if isSignedIn() && isValidId(userId) && isValidId(docId) && isAdmin();
+    }
+  }
+}

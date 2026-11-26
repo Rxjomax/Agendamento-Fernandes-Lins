@@ -1,0 +1,17 @@
+{
+  "name": "Fernandes & Lins Assessoria Jurídica",
+  "short_name": "Fernandes & Lins",
+  "description": "Sistema de agenda jurídica e atendimento na recepção para Fernandes & Lins Assessoria Jurídica.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0B2545",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
